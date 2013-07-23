@@ -24,8 +24,10 @@ References:
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
+var rest = require('restler');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var URL_DEFAULT = "http://tranquil-inlet-4224.herokuapp.com/";
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -65,8 +67,20 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-u, --url <url_string>', 'URL of html file')
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
+    var htmlfilename = HTMLFILE_DEFAULT;
+    if(program.url) {
+	var tempfilename = 'tempindex.html';
+	rest.get(program.url).on('complete', function(result){
+	    fs.writeFileSync(tempfilename,result)}
+				)
+	htmlfilename = tempfilename;
+    }
+    if(program.file) {
+	htmlfilename = program.file;
+    }
+    var checkJson = checkHtmlFile(htmlfilename, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
 } else {
